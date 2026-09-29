@@ -37,6 +37,10 @@ export default class ReplaceContentBlockReference {
         key: AssetItemSimpleMap;
         name: AssetItemSimpleMap;
     };
+    /** @type {(AssetItemSimple & {shared: boolean})[]} Shared fallback for deployment only. */
+    static sharedAssets: (AssetItemSimple & {
+        shared: boolean;
+    })[];
     /** @type {Object.<string, {id: RegExp[], key: RegExp[], name: RegExp[]}>} */
     static "__#private@#regexBy": {
         [x: string]: {
@@ -46,7 +50,7 @@ export default class ReplaceContentBlockReference {
         };
     };
     /**
-     * helper for tests
+     * Clear reference indexes before processing another deployment or BU.
      */
     static resetCacheMap(): void;
     /**
@@ -65,9 +69,11 @@ export default class ReplaceContentBlockReference {
      * @param {string} parentName name of the object that was passed in; used in error message only
      * @param {boolean} [isSsjs] replaces backslashes with double backslashes in name if true
      * @param {boolean} [handleOutside] don not print error message if asset not found
-     * @returns {AssetItemSimple} asset object
+     * @returns {AssetItemSimple & {shared?: boolean}} asset object
      */
-    static "__#private@#getAssetBy"(from: ContentBlockConversionTypes, identifier: string | number, parentName: string, isSsjs?: boolean, handleOutside?: boolean): AssetItemSimple;
+    static "__#private@#getAssetBy"(from: ContentBlockConversionTypes, identifier: string | number, parentName: string, isSsjs?: boolean, handleOutside?: boolean): AssetItemSimple & {
+        shared?: boolean;
+    };
     /**
      *
      * @param {AssetItemSimple} asset asset object

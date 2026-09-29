@@ -270,6 +270,7 @@ const ASSET_QUERY_PROJECTION_KEYS = [
     'name',
     'description',
     'category',
+    'memberId',
     'fileProperties',
     'availableViews',
     'status',
@@ -391,6 +392,20 @@ async function handleAssetReadEngine(config, urlObj) {
             if (!body) {
                 continue;
             }
+            const scope = urlObj.searchParams.get('scope') === 'shared' ? 'shared' : 'local';
+            // Legacy fixtures were recorded without a scope distinction. New scoped
+            // fixtures explicitly opt in, so shared-only dependencies cannot leak locally.
+            if (entry.queryScope && entry.queryScope !== scope) {
+                continue;
+            }
+            if (
+                entry.queryScope === 'shared' &&
+                !body.sharingProperties?.sharedWith?.includes(
+                    Number(config.headers.Authorization?.replace('Bearer ', ''))
+                )
+            ) {
+                continue;
+            }
             // content children (no `status`) only belong in the broad cache-pass query
             if (!body.status && !isCrossSubtypeCacheQuery) {
                 continue;
@@ -424,7 +439,15 @@ async function handleAssetReadEngine(config, urlObj) {
                 items.push(projectAssetQueryItem(body, entry.queryOverrides));
             }
         }
-        const response = { count: items.length, page: 1, pageSize: 50, links: {}, items };
+        const page = data.page?.page || 1;
+        const pageSize = data.page?.pageSize || 50;
+        const response = {
+            count: items.length,
+            page,
+            pageSize,
+            links: {},
+            items: items.slice((page - 1) * pageSize, page * pageSize),
+        };
         console.log(`${loadingFile}asset-pool (dynamic: assetType.id in [${requested.join(',')}])`); // eslint-disable-line no-console
         return [200, JSON.stringify(response)];
     }

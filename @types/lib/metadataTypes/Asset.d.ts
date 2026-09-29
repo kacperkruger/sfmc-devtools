@@ -104,6 +104,21 @@ declare class Asset extends MetadataType {
      */
     static upsert(metadataMap: AssetMap, deployDir: string): Promise<AssetMap>;
     /**
+     * Build dependency-only indexes for this deployment. Shared assets must not enter
+     * the general cache: that cache also determines which assets we update.
+     *
+     * @param {AssetMap} metadataMap assets in the deployment package
+     * @returns {void}
+     */
+    static _prepareDeployReferenceCache(metadataMap: AssetMap): void;
+    /**
+     * Load shared dependencies only after the local/package lookup misses.
+     * Keep them separate from the cache used to select create/update targets.
+     *
+     * @returns {Promise.<void>} resolves when the shared fallback is ready
+     */
+    static _cacheSharedAssets(): Promise<void>;
+    /**
      * helper for {@link MetadataType.updateREST} and {@link MetadataType.updateSOAP}
      *
      * @param {MetadataTypeItem} metadataEntry a single metadata Entry
@@ -244,8 +259,9 @@ declare class Asset extends MetadataType {
      *
      * @param {MetadataTypeItem} metadata a single script activity definition
      * @param {boolean} [hideWarning] when checking content blocks we do want to set the folder path but if we cant, lets not cludder the log with warnings about it
+     * @param {boolean} [requireOwnerMatch] refuse a different owner's folder for shared dependency names
      */
-    static setFolderPath(metadata: MetadataTypeItem, hideWarning?: boolean): void;
+    static setFolderPath(metadata: MetadataTypeItem, hideWarning?: boolean, requireOwnerMatch?: boolean): void;
     /**
      * helper for {@link Asset.preDeployTasks} that loads extracted code content back into JSON
      *
